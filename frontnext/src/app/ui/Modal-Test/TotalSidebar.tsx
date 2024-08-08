@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
@@ -26,29 +26,54 @@ const TotalSidebar: React.FC = () => {
         body: JSON.stringify({ table: tableName }),
       });
       const data = await response.json();
-      setTableData(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setTableData(data);
+      } else {
+        setTableData([]);
+      }
     } catch (error) {
       console.error('Error fetching table data:', error);
+      setTableData([]);
+    }
+  };
+
+  const handleSave = async (updatedData: any[]) => {
+    console.log('Saving data:', updatedData);
+    try {
+      const response = await fetch('http://localhost:8080/updateTable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ table: selectedTable, data: updatedData }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update table data');
+      }
+
+      const result = await response.json();
+      console.log('Update response:', result);
+      // Optionally refetch the data or show a success message
+    } catch (error) {
+      console.error('Error saving table data:', error);
     }
   };
 
   return (
     <div className="flex">
-      {/* 사이드바 영역 */}
       <Sidebar onTableClick={handleTableClick} />
 
-      {/* 메인 콘텐츠 영역 */}
       <div className="flex-grow p-4">
         <h1 className="text-2xl font-bold">Main Content</h1>
         {selectedTable && (
           <div>
             <h2 className="text-xl font-bold mb-4">{selectedTable}</h2>
-            <TableData data={tableData} />
+            <TableData data={tableData} onSave={handleSave} />
           </div>
         )}
       </div>
 
-      {/* 테이블 생성 모달 */}
       <ModalComponent show={showModal} onClose={toggleModal}>
         <div className="text-center">
           <AddSets />
