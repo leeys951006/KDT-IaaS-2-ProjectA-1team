@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import List
 import sqlite3
 from routers import table_router, data_router, create_table_router
 
@@ -20,6 +21,10 @@ DATABASE_PATH = os.path.join(os.path.dirname(__file__), '정호연.db')
 class VerifyRequest(BaseModel):
     id: str
     password: str
+
+class UpdateColumnsRequest(BaseModel):
+    table: str
+    columns: List[str]
 
 @app.post("/login")
 def verify_user(request: VerifyRequest):
@@ -73,6 +78,33 @@ def update_table(request: UpdateTableRequest):
         raise HTTPException(status_code=500, detail=f"데이터 업데이트 중 오류 발생: {str(e)}")
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"알 수 없는 오류 발생: {str(e)}")
+
+@app.post("/updateColumns")
+def update_columns(request: UpdateColumnsRequest):
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+
+        # 현재 테이블의 기존 열 이름 가져오기
+        cursor.execute(f'PRAGMA table_info("{request.table}")')
+        existing_columns = [info[1] for info in cursor.fetchall()]
+
+        # 기존 열 이름과 새로운 열 이름 비교
+        for i, column in enumerate(request.columns):
+            if i < len(existing_columns):
+                if column != existing_columns[i]:
+                    cursor.execute(f'ALTER TABLE "{request.table}" RENAME COLUMN "{existing_columns[i]}" TO "{column}"')
+            else:
+                cursor.execute(f'ALTER TABLE "{request.table}" ADD COLUMN "{column}" TEXT')
+
+        conn.commit()
+        conn.close()
+
+        return {"message": "열 업데이트 완료"}
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail=f"열 업데이트 중 오류 발생: {str(e)}")
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"알 수 없는 오류 발생: {str(e)}")
 
 if __name__ == "__main__":
