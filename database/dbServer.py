@@ -1,21 +1,21 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sqlite3
 from routers import table_router, data_router, create_table_router
-from pwCheange import router as pwCheange_router  # pwCheange 라우터를 임포트
-from typing import List
-from createToCopy import copy_table_structure
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 허용할 오리진을 설정합니다.
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # 모든 HTTP 메서드를 허용합니다.
-    allow_headers=["*"],  # 모든 HTTP 헤더를 허용합니다.
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+DATABASE_PATH = os.path.join(os.path.dirname(__file__), '정호연.db')
 
 class VerifyRequest(BaseModel):
     id: str
@@ -24,8 +24,7 @@ class VerifyRequest(BaseModel):
 @app.post("/login")
 def verify_user(request: VerifyRequest):
     print('login')
-    DATABASE = 'login.db'
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     cursor.execute(
         "SELECT id FROM adminData WHERE id = ? AND password = ?",
@@ -39,23 +38,43 @@ def verify_user(request: VerifyRequest):
     else:
         return False
 
-app.include_router(table_router)  # table_router를 추가한다.
-app.include_router(data_router)  # data_router를 추가한다.
-app.include_router(create_table_router)  # create_table_router를 추가한다.
-app.include_router(pwCheange_router)  # pwCheange 라우터를 추가
+app.include_router(table_router)
+app.include_router(data_router)
+app.include_router(create_table_router)
 
-class Recommend(BaseModel):
+class UpdateTableRequest(BaseModel):
     table: str
+    data: list
 
-@app.post('/createRecommend')
-def create_recommend(request: Recommend):
-    print('createRecommend')
-    copy_table_structure(request.table)
+@app.post("/updateTable")
+def update_table(request: UpdateTableRequest):
+    print(f"Received update request for table: {request.table}")
+    print(f"Data to update: {request.data}")
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
 
-    print(bool(request.table))
-    # JSON 응답으로 반환
-    return {"success": bool(request.table)}
+        primary_key = list(request.data[0].keys())[0]  # 첫 번째 키를 기본 키로 가정
 
-if __name__ == "__dbServer__":
+        for row in request.data:
+            set_clause = ', '.join([f'"{key}" = ?' for key in row.keys() if key != primary_key])
+            values = [row[key] for key in row.keys() if key != primary_key] + [row[primary_key]]
+            update_sql = f'UPDATE "{request.table}" SET {set_clause} WHERE "{primary_key}" = ?'
+            print(f"Executing SQL: {update_sql} with values {values}")
+            cursor.execute(update_sql, values)
+        
+        conn.commit()
+        print("Database commit successful")
+        conn.close()
+
+        return {"message": "테이블 데이터 업데이트 완료"}
+    except sqlite3.Error as e:
+        print(f"SQLite error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"데이터 업데이트 중 오류 발생: {str(e)}")
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"알 수 없는 오류 발생: {str(e)}")
+
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run("dbServer:app", host="0.0.0.0", port=8080, reload=True)
