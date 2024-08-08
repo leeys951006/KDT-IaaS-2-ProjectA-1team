@@ -60,6 +60,28 @@ const TotalSidebar: React.FC = () => {
     }
   };
 
+ const handleColumnSave = async (updatedColumns: string[]) => {
+    console.log('Saving columns:', updatedColumns);
+    try {
+      const response = await fetch('http://localhost:8080/updateColumns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ table: selectedTable, columns: updatedColumns }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update columns');
+      }
+
+      const result = await response.json();
+      console.log('Update columns response:', result);
+    } catch (error) {
+      console.error('Error saving columns:', error);
+    }
+  };
+
   return (
     <div className="flex">
       <Sidebar onTableClick={handleTableClick} />
@@ -69,7 +91,7 @@ const TotalSidebar: React.FC = () => {
         {selectedTable && (
           <div>
             <h2 className="text-xl font-bold mb-4">{selectedTable}</h2>
-            <TableData data={tableData} onSave={handleSave} />
+            <TableData data={tableData} onSave={handleSave} onColumnSave={handleColumnSave} />
           </div>
         )}
       </div>
