@@ -6,8 +6,40 @@ export const TABROUTES = {
 };
 
 export const TABMENUTEXTS = {
-  TABMENUONE: '조회',
-  TABMENUTWO: '입력',
-  TABMENUTHREE: '설정',
-  TABMENUFOUR: '로그아웃',
+  ko: {
+    TABMENUONE: '조회',
+    TABMENUTWO: '입력',
+    TABMENUTHREE: '설정',
+    TABMENUFOUR: '로그아웃',
+  },
+  en: {
+    TABMENUONE: 'View',
+    TABMENUTWO: 'Insert',
+    TABMENUTHREE: 'Settings',
+    TABMENUFOUR: 'Logout',
+  },
+  jp: {
+    TABMENUONE: '検索',
+    TABMENUTWO: '入力',
+    TABMENUTHREE: '設定',
+    TABMENUFOUR: 'ログアウト',
+  },
+  cn: {
+    TABMENUONE: '查看',
+    TABMENUTWO: '输入',
+    TABMENUTHREE: '设置',
+    TABMENUFOUR: '登出',
+  },
+  vn: {
+    TABMENUONE: 'Xem',
+    TABMENUTWO: 'Chèn',
+    TABMENUTHREE: 'Cài đặt',
+    TABMENUFOUR: 'Đăng xuất',
+  },
+  th: {
+    TABMENUONE: 'ดู',
+    TABMENUTWO: 'ใส่',
+    TABMENUTHREE: 'การตั้งค่า',
+    TABMENUFOUR: 'ออกจากระบบ',
+  },
 };
